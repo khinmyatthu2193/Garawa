@@ -1,2 +1,7 @@
-import Link from 'next/link';import {SiteHeader} from '@/components/layout/site-header';import {SiteFooter} from '@/components/layout/site-footer';
-export default function CreatePage(){return <><SiteHeader/><main className="container-page flex min-h-[65vh] flex-col items-center justify-center py-20 text-center"><span className="text-7xl" aria-hidden="true">🌸</span><h1 className="section-title mt-7">ကန်တော့လက်ဆောင် ဖန်တီးမယ်</h1><p className="body-my mt-4 max-w-lg text-[#746A5F]">ဒီစာမျက်နှာမှာ နောက်တစ်ဆင့်အနေနဲ့ လက်ဆောင်ရွေးချယ်ခြင်း၊ စာရေးခြင်းနဲ့ အစမ်းကြည့်ခြင်းတို့ကို တည်ဆောက်သွားပါမယ်။</p><Link className="pill-button mt-8" href="/">← ပင်မစာမျက်နှာသို့</Link></main><SiteFooter/></>}
+import { SiteFooter } from '@/components/layout/site-footer';
+import { SiteHeader } from '@/components/layout/site-header';
+import { OfferingWizard } from '@/components/creator/offering-wizard';
+
+export default function CreatePage() {
+  return <><SiteHeader /><main><OfferingWizard /></main><SiteFooter /></>;
+}
