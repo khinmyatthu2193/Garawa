@@ -1,0 +1,3 @@
+export function OfferingUnavailable() {
+  return <main className="container-page flex min-h-[70vh] items-center justify-center py-16"><section className="storybook-card w-full max-w-xl p-8 text-center sm:p-14"><span className="text-6xl" aria-hidden="true">🌸</span><h1 className="mt-6 text-3xl font-extrabold leading-[1.5] text-[#493129]">ဒီကန်တော့လက်ဆောင်ကို ရှာမတွေ့ပါ</h1><p className="body-my mt-4 text-[#746A5F]">လင့်ကို ပြန်စစ်ကြည့်ပါ။ လက်ဆောင်ကို ရုပ်သိမ်းထားခြင်း သို့မဟုတ် မရရှိနိုင်တော့ခြင်း ဖြစ်နိုင်ပါတယ်။</p><a href="/" className="pill-button mt-8">ပင်မစာမျက်နှာသို့</a></section></main>;
+}

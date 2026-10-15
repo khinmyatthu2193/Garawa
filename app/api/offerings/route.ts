@@ -1,0 +1,25 @@
+import { NextResponse } from 'next/server';
+import { createOffering } from '@/lib/services/offerings';
+import { checkRateLimit, requestKey } from '@/lib/security/rate-limit';
+import { hasAcceptableBodySize, isAllowedMutationOrigin } from '@/lib/security/request';
+import { offeringInputSchema } from '@/lib/validation/offering';
+
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: Request) {
+  if (!hasAcceptableBodySize(request) || !isAllowedMutationOrigin(request)) return NextResponse.json({ error: 'တောင်းဆိုချက်ကို လက်မခံနိုင်ပါ။' }, { status: 400 });
+  const limit = await checkRateLimit(`publish:${requestKey(request)}`);
+  if (!limit.allowed) return NextResponse.json({ error: 'ခဏနားပြီးမှ ထပ်ကြိုးစားပေးပါ။' }, { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } });
+  try {
+    const body: unknown = await request.json();
+    const parsed = offeringInputSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'အချက်အလက်များကို ပြန်စစ်ပေးပါ။' }, { status: 400 });
+    const result = await createOffering({ ...parsed.data, idempotencyKey: request.headers.get('idempotency-key')?.slice(0, 128) });
+    if (result.kind === 'invalid_catalog') return NextResponse.json({ error: 'ရွေးထားသော လက်ဆောင်များ မရရှိနိုင်တော့ပါ။' }, { status: 400 });
+    if (result.kind === 'duplicate') return NextResponse.json({ error: 'ဤဖန်တီးမှုကို လက်ခံရရှိပြီးဖြစ်ပါတယ်။ ထပ်မံမပို့ဘဲ ပြန်စစ်ပေးပါ။' }, { status: 409 });
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
+    return NextResponse.json({ shareUrl: `${baseUrl.replace(/\/$/, '')}/offering/${result.recipientToken}`, senderInboxUrl: `${baseUrl.replace(/\/$/, '')}/inbox/${result.senderToken}` }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
+  } catch {
+    return NextResponse.json({ error: 'ကန်တော့လက်ဆောင်ကို ယခုမဖန်တီးနိုင်သေးပါ။ နောက်တစ်ကြိမ် ထပ်ကြိုးစားပေးပါ။' }, { status: 500 });
+  }
+}
