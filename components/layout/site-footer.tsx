@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export function SiteFooter(){return <footer className="border-t border-[#e9dfd0] bg-[#f5eddf]"><div className="container-page flex flex-col justify-between gap-5 py-9 text-sm text-[#756a5f] md:flex-row md:items-center"><div><Link href="/" className="text-xl font-extrabold text-[#8D3430]">🌸 ဂါရဝ</Link><p className="mt-2">အဝေးကနေလည်း ချစ်ခြင်းနဲ့ ကန်တော့နိုင်တယ်။</p></div><p className="max-w-sm leading-7">ဤလက်ဆောင်များသည် ဒစ်ဂျစ်တယ်သင်္ကေတများသာဖြစ်ပြီး ပစ္စည်းအမှန် ပို့ဆောင်ခြင်း သို့မဟုတ် ငွေပေးချေခြင်း မပါဝင်ပါ။</p></div></footer>}
