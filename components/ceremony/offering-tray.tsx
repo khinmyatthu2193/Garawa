@@ -1,0 +1,6 @@
+import { getOffering } from '@/lib/offering-catalog';
+import type { OfferingId } from '@/types/offering';
+
+export function OfferingTray({ selectedOfferings, skipAnimation }: { selectedOfferings: OfferingId[]; skipAnimation: boolean }) {
+  return <div className="relative mt-8 rounded-[30px] border border-[#D8A348]/50 bg-[#F4E2C1] px-4 pb-8 pt-8 shadow-[0_18px_50px_rgba(113,71,30,.13)] sm:px-8"><div className="absolute left-5 top-4 text-lg text-[#D8A348]" aria-hidden="true">✦</div><div className="absolute right-6 top-5 text-xl text-[#D8A348]" aria-hidden="true">✿</div><div className="relative grid grid-cols-2 gap-3 sm:grid-cols-3">{selectedOfferings.map((id, index) => { const item = getOffering(id); if (!item) return null; return <div key={id} className={`ceremony-item rounded-[22px] p-4 text-center ${skipAnimation ? '' : 'ceremony-item-reveal'}`} style={{ backgroundColor: item.color, animationDelay: skipAnimation ? '0ms' : `${index * 80}ms` }}><span className="text-5xl" role="img" aria-label={item.englishName}>{item.emoji}</span><p className="mt-3 font-bold text-[#493129]">{item.name}</p><p className="mt-1 text-xs text-[#746A5F]">{item.englishName}</p></div>; })}</div><div className="mx-auto mt-5 h-3 max-w-[620px] rounded-full bg-[#B87C3F]/35" aria-hidden="true" /></div>;
+}
