@@ -6,7 +6,8 @@ UI-first prototype of a Myanmar-inspired digital offering website. This mileston
 
 ## Run locally
 
-Requires Node.js 20 or later.
+Requires Node.js 22 or later because the installed Supabase JS packages
+declare Node.js 22+ engine support.
 
 ```bash
 npm install
@@ -39,6 +40,7 @@ Phase 4 adds real publishing and recipient links through Supabase. Copy
 .env.example to .env.local and fill in:
 
     NEXT_PUBLIC_SUPABASE_URL=your-project-url
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
     SUPABASE_SECRET_KEY=your-server-only-secret-key
     NEXT_PUBLIC_APP_URL=http://localhost:3000
 
@@ -84,6 +86,46 @@ the client IP in X-Forwarded-For. Leave it false otherwise.
 Run npm run dev for local development, npx tsc --noEmit for type
 checking, and npm run build for a production build. Live Supabase
 integration requires a configured project and migration.
+
+## Phase 4.2A: authentication
+
+Authentication uses Supabase Auth with `@supabase/ssr`. The publishable key
+is safe for browser and cookie clients; `SUPABASE_SECRET_KEY` is server-only
+and must never be prefixed with `NEXT_PUBLIC_` or committed.
+
+Run the new migration after Phase 4 migrations:
+
+    npx supabase db push
+
+The migration creates `profiles`, a signup trigger, ownership policies, and
+the nullable `offerings.sender_user_id` link. Historical offerings remain
+valid and are not reassigned to a new user. New publishing requests require
+an authenticated Supabase user, and the server obtains the user ID from
+`auth.getUser()` rather than trusting request data.
+
+In Supabase Auth settings, enable Email and Password. This product expects
+email confirmation to be disabled for normal registration; if confirmation
+remains enabled, the UI still avoids exposing whether an email exists and
+the user must complete Supabase's confirmation flow. Configure Google OAuth
+in Supabase Auth. In Google Cloud, the OAuth client's authorized redirect URI
+must be Supabase's provider callback (not Garawa's application callback):
+
+    https://<project-ref>.supabase.co/auth/v1/callback
+
+In Supabase Auth URL Configuration, add Garawa's application callback to the
+redirect allow list:
+
+    http://localhost:3000/auth/callback
+
+Add the production equivalent there as well. Password recovery uses
+`/auth/callback?next=/reset-password`; keep the recovery email template's
+link pointed at the Supabase action URL so the recovery session is preserved.
+
+Available authenticated routes are `/dashboard`, `/settings`, and `/create`.
+Public recipient and private sender-link routes remain available. OAuth and
+password recovery are not fully testable until the Supabase provider,
+redirect URLs, email templates, and project keys are configured. Account
+deletion is intentionally not included in this phase.
 
 ## Notes
 
