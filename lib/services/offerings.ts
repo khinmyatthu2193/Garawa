@@ -3,21 +3,44 @@ import { createHash } from 'node:crypto';
 import { createShareToken, hashShareToken, isValidShareToken } from '@/lib/security/tokens';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { validateCatalogIds } from '@/lib/services/catalog';
+import { decryptShareToken, encryptShareToken } from '@/lib/security/recoverable-share-token';
 import type { OfferingId, RecipientOffering } from '@/types/offering';
 
-export async function createOffering(input: { recipientName: string; senderName: string; selectedOfferings: string[]; message: string; wishes: string; idempotencyKey?: string }) {
+export async function createOffering(input: { recipientName: string; senderName: string; selectedOfferings: string[]; message: string; wishes: string; senderUserId: string; idempotencyKey?: string }) {
   const selectedIds = await validateCatalogIds(input.selectedOfferings);
   if (!selectedIds) return { kind: 'invalid_catalog' as const };
   const requestKeyHash = input.idempotencyKey ? createHash('sha256').update(input.idempotencyKey).digest('hex') : null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const recipientToken = createShareToken();
     const senderToken = createShareToken();
-    const { data, error } = await getSupabaseAdmin().from('offerings').insert({ share_token_hash: recipientToken.hash, sender_access_token_hash: senderToken.hash, request_key_hash: requestKeyHash, recipient_name: input.recipientName, sender_name: input.senderName, message: input.message, wishes: input.wishes || null, selected_item_ids: selectedIds, status: 'active' }).select('id').single();
+    const { data, error } = await getSupabaseAdmin().from('offerings').insert({ share_token_hash: recipientToken.hash, recipient_share_token_encrypted: encryptShareToken(recipientToken.raw), sender_access_token_hash: senderToken.hash, request_key_hash: requestKeyHash, sender_user_id: input.senderUserId, recipient_name: input.recipientName, sender_name: input.senderName, message: input.message, wishes: input.wishes || null, selected_item_ids: selectedIds, status: 'active' }).select('id').single();
     if (!error && data) return { kind: 'created' as const, recipientToken: recipientToken.raw, senderToken: senderToken.raw };
     if (error?.code !== '23505') throw error;
     if (requestKeyHash) return { kind: 'duplicate' as const };
   }
   throw new Error('Unable to create a unique share token.');
+}
+
+export type OwnedOffering = {
+  id: string; recipient_name: string; sender_name: string; message: string; wishes: string | null;
+  selected_item_ids: string[]; created_at: string; response: { message: string; created_at: string } | null;
+  recipientShareToken: string | null;
+};
+
+export async function getOwnedOffering(userId: string, id: string): Promise<OwnedOffering | null> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.from('offerings').select('id,recipient_name,sender_name,message,wishes,selected_item_ids,created_at,recipient_share_token_encrypted,recipient_responses(message,created_at)').eq('id', id).eq('sender_user_id', userId).maybeSingle();
+  if (error || !data) return null;
+  const responses = Array.isArray(data.recipient_responses) ? data.recipient_responses : [];
+  return { id: data.id, recipient_name: data.recipient_name, sender_name: data.sender_name, message: data.message, wishes: data.wishes, selected_item_ids: data.selected_item_ids, created_at: data.created_at, response: responses[0] ?? null, recipientShareToken: data.recipient_share_token_encrypted ? decryptShareToken(data.recipient_share_token_encrypted) : null };
+}
+
+export async function getOwnedOfferings(userId: string, page = 1, pageSize = 12) {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, count, error } = await getSupabaseAdmin().from('offerings').select('id,recipient_name,sender_name,selected_item_ids,created_at,recipient_share_token_encrypted,recipient_responses(message,created_at)', { count: 'exact' }).eq('sender_user_id', userId).order('created_at', { ascending: false }).range(from, to);
+  if (error) throw error;
+  return { items: (data ?? []).map((item) => ({ ...item, recipientShareToken: item.recipient_share_token_encrypted ? decryptShareToken(item.recipient_share_token_encrypted) : null, response: Array.isArray(item.recipient_responses) ? item.recipient_responses[0] ?? null : null })), total: count ?? 0, hasMore: to + 1 < (count ?? 0) };
 }
 
 export async function getOfferingByToken(rawToken: string): Promise<RecipientOffering | null> {
