@@ -81,7 +81,6 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
       if (saved.mood === 'all' || musicMoods.some((mood) => mood.id === saved.mood)) setSelectedMood(saved.mood);
       if (typeof saved.volume === 'number') setVolumeState(Math.min(1, Math.max(0, saved.volume)));
       if (typeof saved.muted === 'boolean') setMuted(saved.muted);
-      if (typeof saved.expanded === 'boolean') setExpanded(saved.expanded);
     } catch { /* Ignore malformed local preferences. */ }
   }, []);
 
