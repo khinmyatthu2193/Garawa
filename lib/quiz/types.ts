@@ -16,6 +16,8 @@ export type QuizQuestion = {
   reviewStatus: ReviewStatus;
 };
 
+export type PublicQuizQuestion = Omit<QuizQuestion, 'answer' | 'source' | 'reviewStatus'>;
+
 export type QuizCategory = {
   id: QuizCategoryId;
   name: string;

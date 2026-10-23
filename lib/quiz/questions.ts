@@ -1,4 +1,5 @@
-import type { QuizCategory, QuizCategoryId, QuizQuestion } from '@/lib/quiz/types';
+import 'server-only';
+import type { PublicQuizQuestion, QuizCategory, QuizCategoryId, QuizQuestion } from '@/lib/quiz/types';
 
 export const quizCategories: QuizCategory[] = [
   { id: 'proverbs', name: 'မြန်မာစကားပုံများ', englishName: 'Myanmar Proverbs & Sayings', description: 'စကားပုံတို့၏ အဓိပ္ပါယ်နှင့် သင့်လျော်သောအသုံးကို လေ့လာပါ။', typeLabel: 'ရွေးချယ်ဖြေဆိုရန်' },
@@ -35,3 +36,5 @@ export const quizQuestions: QuizQuestion[] = [
 
 export function getQuizCategory(id: string) { return quizCategories.find((category) => category.id === id); }
 export function getApprovedQuestions(categoryId: QuizCategoryId) { return quizQuestions.filter((question) => question.categoryId === categoryId && question.reviewStatus === 'approved'); }
+export function getQuestionById(id: string) { return quizQuestions.find((question) => question.id === id && question.reviewStatus === 'approved'); }
+export function toPublicQuestion(question: QuizQuestion): PublicQuizQuestion { const { answer: _answer, source: _source, reviewStatus: _reviewStatus, ...publicQuestion } = question; return publicQuestion; }
