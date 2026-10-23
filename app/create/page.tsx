@@ -7,11 +7,13 @@ import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function CreatePage() {
+  let userId = '';
   try {
     const { data: { user } } = await (await getSupabaseServer()).auth.getUser();
     if (!user) redirect('/login?next=/create');
+    userId = user.id;
   } catch {
     redirect('/login?next=/create');
   }
-  return <><SiteHeader /><main><OfferingWizard /></main><SiteFooter /></>;
+  return <><SiteHeader /><main><OfferingWizard userId={userId} /></main><SiteFooter /></>;
 }
