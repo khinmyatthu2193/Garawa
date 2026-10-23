@@ -130,6 +130,19 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
   }, [filteredTracks, trackId]);
   const seek = useCallback((value: number) => { if (audioRef.current) audioRef.current.currentTime = value; setCurrentTime(value); }, []);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onEnded = () => {
+      const list = filteredTracks.length ? filteredTracks : musicTracks;
+      if (!list.length) return;
+      const index = Math.max(0, list.findIndex((track) => track.id === trackId));
+      setTrackId(list[(index + 1) % list.length].id);
+    };
+    audio.addEventListener('ended', onEnded);
+    return () => audio.removeEventListener('ended', onEnded);
+  }, [filteredTracks, trackId]);
+
   const value = useMemo<MusicContextValue>(() => ({
     tracks: musicTracks, filteredTracks, currentTrack, selectedMood, isPlaying, loading, error, volume, muted, currentTime, duration, expanded,
     hasTracks: musicTracks.length > 0, setSelectedMood, setTrack, play, pause, togglePlay, next: () => move(1), previous: () => move(-1),
