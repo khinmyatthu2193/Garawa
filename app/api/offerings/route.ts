@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const parsed = offeringInputSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'အချက်အလက်များကို ပြန်စစ်ပေးပါ။' }, { status: 400 });
     const result = await createOffering({ ...parsed.data, senderUserId: user.id, idempotencyKey: request.headers.get('idempotency-key')?.slice(0, 128) });
-    if (result.kind === 'invalid_catalog') return NextResponse.json({ error: 'ရွေးထားသော လက်ဆောင်များ မရရှိနိုင်တော့ပါ။' }, { status: 400 });
+    if (result.kind === 'invalid_catalog') return NextResponse.json({ error: 'ရွေးထားသော လက်ဆောင်အချို့ကို အသုံးပြုခွင့်မရှိသေးပါ။ ရွေးချယ်မှုကို ပြန်စစ်ပါ။' }, { status: 422 });
     if (result.kind === 'duplicate') return NextResponse.json({ error: 'ဤဖန်တီးမှုကို လက်ခံရရှိပြီးဖြစ်ပါတယ်။ ထပ်မံမပို့ဘဲ ပြန်စစ်ပေးပါ။' }, { status: 409 });
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
     return NextResponse.json({ shareUrl: `${baseUrl.replace(/\/$/, '')}/offering/${result.recipientToken}`, senderInboxUrl: `${baseUrl.replace(/\/$/, '')}/inbox/${result.senderToken}` }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
