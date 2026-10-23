@@ -130,3 +130,12 @@ deletion is intentionally not included in this phase.
 ## Notes
 
 The illustrations are initial UI placeholders. Before release, replace emoji with a cohesive original illustrated asset set and review Burmese wording and cultural accuracy with native speakers.
+
+## Phase 4.2C: persistent Garawa Points
+
+Apply `supabase/migrations/005_garawa_points.sql` after the earlier migrations
+to enable authenticated quiz attempts, wallets, point transactions, and the
+atomic reward function. The server grades answers from the server-only quiz
+bank; clients never receive answer keys or submit reward amounts. Existing
+users begin with a zero wallet through lazy initialization, and old practice
+scores are not converted into persistent points.
