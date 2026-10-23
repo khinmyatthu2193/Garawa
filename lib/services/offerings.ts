@@ -7,7 +7,7 @@ import { encryptShareToken } from '@/lib/security/recoverable-share-token';
 import type { OfferingId, RecipientOffering } from '@/types/offering';
 
 export async function createOffering(input: { recipientName: string; senderName: string; selectedOfferings: string[]; message: string; wishes: string; senderUserId: string; idempotencyKey?: string }) {
-  const selectedIds = await validateCatalogIds(input.selectedOfferings);
+  const selectedIds = await validateCatalogIds(input.selectedOfferings, input.senderUserId);
   if (!selectedIds) return { kind: 'invalid_catalog' as const };
   const requestKeyHash = input.idempotencyKey ? createHash('sha256').update(input.idempotencyKey).digest('hex') : null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -25,7 +25,7 @@ export async function getOfferingByToken(rawToken: string): Promise<RecipientOff
   if (!isValidShareToken(rawToken)) return null;
   const { data, error } = await getSupabaseAdmin().from('offerings').select('recipient_name,sender_name,message,wishes,selected_item_ids,status').eq('share_token_hash', hashShareToken(rawToken)).eq('status', 'active').maybeSingle();
   if (error || !data) return null;
-  const { data: catalog, error: catalogError } = await getSupabaseAdmin().from('offering_catalog').select('id').eq('is_active', true).in('id', data.selected_item_ids);
+  const { data: catalog, error: catalogError } = await getSupabaseAdmin().from('offering_catalog').select('id').in('id', data.selected_item_ids);
   if (catalogError) return null;
   const known = new Set((catalog ?? []).map((item) => item.id));
   if (!data.selected_item_ids.every((id: string) => known.has(id))) return null;
